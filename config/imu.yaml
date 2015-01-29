@@ -1,0 +1,4 @@
+channels:
+  - raw_imu_data
+frames:
+  - torso

@@ -1,0 +1,6 @@
+<launch>
+  <node name="kvh_1750_imu" pkg="robot_imu" type="kvh_1750_imu_main" output="screen">
+    <rosparam command="load" file="$(find imu)/config/imu.yaml"/>
+  </node>
+</launch>
+
