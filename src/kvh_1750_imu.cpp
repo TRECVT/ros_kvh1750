@@ -14,24 +14,60 @@
 
 #pragma GCC diagnostic pop
 
-#include <stdio.h>
-#include <iostream>
-#include <unistd.h>
-#include <fcntl.h>
 #include <fstream>
 #include <algorithm>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
+#include <byteswap.h>
 
-void bytesToFloat(char *inputBuffer, float *rotationOutput, float *accelerationOutput)
+namespace
 {
-  for (int quadByteCounter = 0; quadByteCounter < 21; quadByteCounter += 4)
+  const size_t HeaderSize = 4;
+  const char Header[] = {0xFE, 0x81, 0xFF, 0x55};
+  const int TempWarn = 75;
+}
+
+struct KVH1750Message
+{
+  char Header[4];
+  int32_t rots[3];
+  int32_t accels[3];
+  uint8_t status;
+  uint8_t seq;
+  uint16_t temp;
+  uint32_t crc;
+};
+
+/**
+ * Extracts values from byte array to arrays of floats. Does not modify
+ * the input buffer, and performs full conversion of values.
+ */
+bool extractValues(const std::vector<char>& buffer,
+  double** ang_vel, double** lin_accel, double& temp)
+{
+  const size_t Num_Values_Per_Array = 3;
+
+  const KVH1750Message* message = reinterpret_cast<const KVH1750Message*>(&buffer.front());
+  for(size_t ii = 0; ii < Num_Values_Per_Array; ++ii)
   {
-    std::reverse(&inputBuffer[quadByteCounter], &inputBuffer[quadByteCounter + 4]);
+    const double Gravity = 9.80665;
+    int32_t ang = bswap_32(message->rots[ii]);
+    int32_t lin = bswap_32(message->accels[ii]);
+    *ang_vel[ii] = *reinterpret_cast<float*>(&ang);
+    *lin_accel[ii] = Gravity * *reinterpret_cast<float*>(&lin);
   }
 
-  memcpy(&rotationOutput[0], &inputBuffer[0], 12);
-  memcpy(&accelerationOutput[0], &inputBuffer[12], 12);
+  //TODO: add support for above 100c
+  temp =  bswap_16(message->temp);
 
+  if(temp > TempWarn)
+  {
+    ROS_FATAL("!!!WARNING WARNING WARNING!!! IMU TOO HOT, TURN OFF ROBOT NOW!");
+  }
+
+  return true;
 }
 
 int main(int argc, char **argv)
@@ -39,100 +75,90 @@ int main(int argc, char **argv)
   //Name of node
   ros::init(argc, argv, "kvh_1750_imu");
   //Node handle
-  ros::NodeHandle kvh1750imuNodeHandle;
-  ros::Publisher kvh1750_IMU = kvh1750imuNodeHandle.advertise<sensor_msgs::Imu>("kvh1750imu_message", 1);
-  ros::Publisher kvh1750_TEMP = kvh1750imuNodeHandle.advertise<sensor_msgs::Temperature>("kvh1750temp_message", 1);
+  ros::NodeHandle nh("~");
+  ros::Publisher imu_pub = nh.advertise<sensor_msgs::Imu>("imu", 1);
+  ros::Publisher temp_pub = nh.advertise<sensor_msgs::Temperature>("temp", 1);
+  std::string imu_link_name = "torso";
+  nh.getParam("imu_link_name", imu_link_name);
 
-  sensor_msgs::Imu KVHImu;
-  sensor_msgs::Temperature KVHTemp;
+  const double DefaultRate_Hz = 1000.0;
+  double rate_hz = DefaultRate_Hz;
 
-  char byte[36];
-  char header;
-  float accel[3];
-  float rotat[3];
-
-  const float GRAVITY_CONSTANT = 9.80665;
-  const char HEADER_1 = 0xFE;
-  const char HEADER_2 = 0x81;
-  const char HEADER_3 = 0xFF;
-  const char HEADER_4 = 0x55;
-  const int TEMP_WARN = 75;
-
-  double rate_hz = 1000.0;
-
-  kvh1750imuNodeHandle.getParam("rate_hz", rate_hz);
+  nh.getParam("rate_hz", rate_hz);
 
   if (rate_hz <= 0.0)
   {
-    ROS_WARN("Invalid cycle rate. Defaulting to 10.0");
-    rate_hz = 10.0;
+    ROS_WARN("Invalid cycle rate. Defaulting to %f", DefaultRate_Hz);
+    rate_hz = DefaultRate_Hz;
   }
+
+  sensor_msgs::Imu current_imu;
+  sensor_msgs::Temperature kvh_temp;
 
   ros::Rate loop_rate(rate_hz);
   // ROS_INFO("OUTPUT 1");
-  int fd = open("/dev/ttyS4", O_RDWR);
+  int fd = open("/dev/ttyS4", O_RDONLY);
   //Static Settings
-  KVHImu.angular_velocity_covariance[0] = -1;
-  KVHImu.angular_velocity_covariance[4] = -1;
-  KVHImu.angular_velocity_covariance[8] = -1;
-  KVHImu.linear_acceleration_covariance[0] = -1;
-  KVHImu.linear_acceleration_covariance[4] = -1;
-  KVHImu.linear_acceleration_covariance[8] = -1;
-  KVHTemp.header.frame_id = "torso";
-  KVHImu.header.frame_id = "torso";
+  current_imu.angular_velocity_covariance[0] = -1;
+  current_imu.angular_velocity_covariance[4] = -1;
+  current_imu.angular_velocity_covariance[8] = -1;
+  current_imu.linear_acceleration_covariance[0] = -1;
+  current_imu.linear_acceleration_covariance[4] = -1;
+  current_imu.linear_acceleration_covariance[8] = -1;
+  kvh_temp.header.frame_id = imu_link_name;
+  current_imu.header.frame_id = imu_link_name;
 
-
-  while (ros::ok())
+  const size_t MessageSize = 36;
+  std::vector<char> buffer(MessageSize, 0);
+  size_t bytes_used = 0;
+  while(ros::ok())
   {
-    ros::Time read_tm = ros::Time::now();
-    read(fd, &header, 1);
-    while (header != HEADER_1)
+    bool read_msg = false;
+    while(ros::ok() && !read_msg)
     {
-      read(fd, &header, 1);
-    }
-    if (header == HEADER_1)
-    {
-      read(fd, &header, 1);
-      if (header == HEADER_2)
+      ros::Time read_tm = ros::Time::now();
+      int rc = read(fd, &buffer[bytes_used], MessageSize - bytes_used);
+      if(rc < 0)
       {
-        read(fd, &header, 1);
-        if (header == HEADER_3)
-        {
-          read(fd, &header, 1);
-          if (header == HEADER_4)
-          {
-            read(fd, &byte, 32);
+        ROS_ERROR("Error reading file. %s", strerror(errno));
+      }
+      bytes_used += rc;
+      std::vector<char>::iterator buffer_end = buffer.begin() + bytes_used;
+      std::vector<char>::iterator match = std::search(buffer.begin(),
+        buffer_end, Header, Header + HeaderSize);
 
-            bytesToFloat(byte, rotat, accel);
-            accel[0] *= GRAVITY_CONSTANT;
-            accel[1] *= GRAVITY_CONSTANT;
-            accel[2] *= GRAVITY_CONSTANT;
+      if(match == buffer.begin()) //process complete message
+      {
+        double* accels[] = {&current_imu.linear_acceleration.x,
+          &current_imu.linear_acceleration.y, &current_imu.linear_acceleration.z};
+        double* ang_vels[] = {&current_imu.angular_velocity.x,
+          &current_imu.angular_velocity.y, &current_imu.angular_velocity.z};
+        extractValues(buffer, ang_vels, accels, kvh_temp.temperature);
 
-            KVHImu.linear_acceleration.x = accel[0];
-            KVHImu.linear_acceleration.y = accel[1];
-            KVHImu.linear_acceleration.z = accel[2];
-
-            KVHImu.angular_velocity.x = rotat[0];
-            KVHImu.angular_velocity.y = rotat[1];
-            KVHImu.angular_velocity.z = rotat[2];
-
-            //TODO: add support for above 100c
-            KVHTemp.temperature =  byte[27] ;
-            if (byte[27] > TEMP_WARN)
-            {
-              ROS_FATAL("\n  !!!WARNING WARNING WARNING!!! \n IMU TOO HOT, TURN OFF ROBOT NOW!");
-            }
-            KVHTemp.header.stamp = read_tm;
-            KVHImu.header.stamp = read_tm;
-          }
-        }
+        kvh_temp.header.stamp = read_tm;
+        current_imu.header.stamp = read_tm;
+        read_msg = true;
+        buffer.clear();
+        buffer.resize(MessageSize, 0);
+      }
+      else
+      {
+        std::vector<char> new_buffer;
+        //start at either the match, or the longest missable substring
+        std::vector<char>::iterator start = std::min(match, std::max(buffer.begin(),
+          buffer_end - (HeaderSize - 1)));
+        new_buffer.insert(new_buffer.begin(), start, buffer_end);
+        new_buffer.resize(MessageSize, 0);
+        bytes_used = buffer_end - start;
+        buffer.swap(new_buffer);
       }
     }
 
-    kvh1750_IMU.publish(KVHImu);
-    kvh1750_TEMP.publish(KVHTemp);
+    imu_pub.publish(current_imu);
+    temp_pub.publish(kvh_temp);
     ros::spinOnce();
     loop_rate.sleep();
   }
 
+  close(fd);
 }

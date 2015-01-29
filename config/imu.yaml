@@ -1,4 +1,1 @@
-channels:
-  - raw_imu_data
-frames:
-  - torso
+rate: 10.0
