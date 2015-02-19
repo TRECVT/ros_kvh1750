@@ -19,13 +19,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native")
 find_package(catkin REQUIRED COMPONENTS
              roscpp
              sensor_msgs
-             message_generation
+             trooper_mlc_msgs
             )
-
-generate_messages(
-  DEPENDENCIES
-  sensor_msgs
-)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -42,9 +37,14 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_library(kvh1750
+            src/types.cpp
+            src/imu.cpp
+           )
+
 ##
-add_executable(kvh_1750_imu src/kvh_1750_imu.cpp)
-target_link_libraries(kvh_1750_imu ${catkin_LIBRARIES}
+add_executable(kvh_1750_imu src/node.cpp)
+target_link_libraries(kvh_1750_imu kvh1750 ${catkin_LIBRARIES}
                      )
 
 ##
