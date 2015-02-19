@@ -42,6 +42,11 @@ add_library(kvh1750
             src/imu.cpp
            )
 
+catkin_add_gtest(kvh1750-test test/utest.cpp)
+if(TARGET ${PROJECT_NAME}-test)
+  target_link_libraries(kvh1750-test kvh1750)
+endif()
+
 ##
 add_executable(kvh_1750_imu src/node.cpp)
 target_link_libraries(kvh_1750_imu kvh1750 ${catkin_LIBRARIES}
