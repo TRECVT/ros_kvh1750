@@ -25,6 +25,11 @@ KVHBase::KVHBase()
 {
 }
 
+/**
+ * Public read interface, which attempts to read a new KVH message
+ * \param[in] msg Storage location for new message.
+ * \param[out] size_t Flag indicating read success.
+ */
 size_t KVHBase::read(kvh::Message& msg)
 {
   uint64_t secs = 0;
@@ -51,6 +56,11 @@ size_t KVHBase::read(kvh::Message& msg)
   return result;
 }
 
+/**
+ * Function to search the memory buffer for the header sequence.
+ * \param[in,out] iterator pointing to location of header
+ * \param[out] Flag indicating if header is at the start of the header.
+ */
 bool KVHBase::find_header(std::vector<char>::iterator& match)
 {
   std::vector<char>::iterator buffer_end = _buff.begin() + _bytes_read;
@@ -60,6 +70,10 @@ bool KVHBase::find_header(std::vector<char>::iterator& match)
   return match == _buff.begin();
 }
 
+/**
+ * Clears and resets the memory buffer used to store the raw message being
+ * processed.
+ */
 void KVHBase::reset_buffer()
 {
   _buff.clear();
@@ -67,6 +81,11 @@ void KVHBase::reset_buffer()
   _bytes_read = 0;
 }
 
+/**
+ * Stores a partially read message at the start of the buffer
+ * to simplify processing.
+ * \param[in] match Iterator pointing to start of header.
+ */
 void KVHBase::reset_partial_buffer(const std::vector<char>::iterator& match)
 {
   std::vector<char> new_buffer;
@@ -80,11 +99,19 @@ void KVHBase::reset_partial_buffer(const std::vector<char>::iterator& match)
   _buff.swap(new_buffer);
 }
 
+/**
+ * Number of bytes available for writing in the buffer.
+ */
 size_t KVHBase::bytes_remaining() const
 {
   return sizeof(kvh::RawMessage) - _bytes_read;
 }
 
+/**
+ * Default constructor.
+ * \param[in] addr File location to read data from
+ * \param[in] tm Number of milliseconds to wait. -1 blocks, 0 is nonblock
+ */
 KVH1750::KVH1750(const std::string& addr, int tm) :
   KVHBase(),
   _fd(-1),
@@ -128,6 +155,9 @@ KVH1750::KVH1750(const std::string& addr, int tm) :
   }
 }
 
+/**
+ * Default destructor
+ */
 KVH1750::~KVH1750()
 {
   if(_fd >= 0)
@@ -136,6 +166,14 @@ KVH1750::~KVH1750()
   }
 }
 
+/**
+ * Low level read interface for A POSIX style file descriptor.
+ * \param[in,out] buff Buffer to store data
+ * \param[in,out] secs Timestamp, seconds since epoch.
+ * \param[in,out] nsecs Timestamp, nanoseconds since the seconds since epoch.
+ * \param[in,out] is_c Flag indicating if temperature is in Celsius
+ * \param[in,out] is_da Flag indicating if the angular velocities are raw or filtered.
+ */
 size_t KVH1750::read(std::vector<char>& buff, uint64_t& secs, uint64_t& nsecs, bool& is_c, bool& is_da)
 {
   //TODO: Track state of KVH

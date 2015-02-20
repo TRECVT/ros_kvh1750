@@ -21,9 +21,15 @@ constexpr std::array<char, sizeof...(A)> byte_array(A... v)
 
 //! Constant for convering accelerations to floating point values
 const float Gravity = 9.80665;
+//! Header which starts every KVH message
 const std::array<char, 4> Header = byte_array(0xFE, 0x81, 0xFF, 0x55);
+//! Max operating temperature of the KVH 1750
 const int16_t MaxTemp_C = 75;
 
+/**
+ * Enumeration defining which bits in the status field correspond
+ * to various sub-components of the system.
+ */
 typedef enum
 {
   GYRO_X = 1,
@@ -34,13 +40,20 @@ typedef enum
   ACCEL_Z = 1 << 6
 } StatusBits;
 
+//! CRC Computation values from KVH
 namespace crc
 {
+//! Width of the CRC
 const size_t Width = 32;
+//! Starting Polynomial value
 const uint64_t Poly = 0x04C11DB7;
-const uint32_t XOr_In = 0xFFFFFFFF;
-const uint32_t XOr_Out = 0x0;
+//! Mask for XOr Input operation
+const uint64_t XOr_In = 0xFFFFFFFF;
+//! Mask XOr Output Operation
+const uint64_t XOr_Out = 0x0u;
+//! Reflect In Flag
 const bool Reflect_In = false;
+//! Reflect Out Flag
 const bool Reflect_Out = false;
 }
 

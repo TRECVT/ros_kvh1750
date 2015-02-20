@@ -10,8 +10,11 @@
 
 namespace
 {
+  //! Offset between Celsius and Farenheit
   const double CF_Offset = 32.0;
+  //! Scaling factor from Farenheit to Celsius
   const double FC_Scale = 5.0 / 9.0;
+  //! Scaling factor from Celsius to Farenheit
   const double CF_Scale = 9.0 / 5.0;
 }
 
@@ -52,10 +55,17 @@ Message::Message(const RawMessage& raw, uint32_t secs, uint32_t nsecs, bool is_c
   from_raw(raw, secs, nsecs, is_c, is_da);
 }
 
+/**
+ * Default destructor
+ */
 Message::~Message()
 {
 }
 
+/**
+ * Conversion function from raw message to a more meaningful representation.
+ * \param[out] Flag indicating if the CRC came up valid.
+ */
 bool Message::from_raw(const RawMessage& raw, uint32_t secs, uint32_t nsecs,
   bool is_c, bool is_da)
 {
@@ -96,36 +106,58 @@ bool Message::from_raw(const RawMessage& raw, uint32_t secs, uint32_t nsecs,
   return valid_msg;
 }
 
+/**
+ * Accessing angular velocity along IMU's X.
+ */
 float Message::gyro_x() const
 {
   return _ang_vel[X];
 }
 
+/**
+ * Accessing angular velocity with IMU's Y.
+ */
 float Message::gyro_y() const
 {
   return _ang_vel[Y];
 }
 
+/**
+ * Accessing angular velocity with IMU's Z.
+ */
 float Message::gyro_z() const
 {
   return _ang_vel[Z];
 }
 
+/**
+ * Accessing linear acceleration with IMU's X.
+ */
 float Message::accel_x() const
 {
   return _lin_accel[X];
 }
 
+/**
+ * Accessing linear acceleration with IMU's Y.
+ */
 float Message::accel_y() const
 {
   return _lin_accel[Y];
 }
 
+/**
+ * Accessing linear acceleration with IMU's Z.
+ */
 float Message::accel_z() const
 {
   return _lin_accel[Z];
 }
 
+/**
+ * Accessing temperature rounded to the nearest degree. See
+ * is_celsius() to determine units.
+ */
 int16_t Message::temp() const
 {
   return _temp;
@@ -156,46 +188,74 @@ bool Message::valid() const
   return _status != 0;
 }
 
+/**
+ * Flag indicating if the X gyro was valid.
+ */
 bool Message::valid_gyro_x() const
 {
   return _status & GYRO_X;
 }
 
+/**
+ * Flag indicating if the Y gyro was valid.
+ */
 bool Message::valid_gyro_y() const
 {
   return _status & GYRO_Y;
 }
 
+/**
+ * Flag indicating if the Z gyro was valid.
+ */
 bool Message::valid_gyro_z() const
 {
   return _status & GYRO_Z;
 }
 
+/**
+ * Flag indicating if the X accelerometer was valid.
+ */
 bool Message::valid_accel_x() const
 {
   return _status & ACCEL_X;
 }
 
+/**
+ * Flag indicating if the Y accelerometer was valid.
+ */
 bool Message::valid_accel_y() const
 {
   return _status & ACCEL_Y;
 }
 
+/**
+ * Flag indicating if the Z accelerometer was valid.
+ */
 bool Message::valid_accel_z() const
 {
   return _status & ACCEL_Z;
 }
 
+/**
+ * Flag indicating if temperature is in Celsius.
+ */
 bool Message::is_celsius() const
 {
   return _is_c;
 }
 
+/**
+ * Flag indicating if angular velocities are delta-angles, as
+ * opposed to some filtered angular velocity.
+ */
 bool Message::is_delta_angle() const
 {
   return _is_da;
 }
 
+/**
+ * Converts temperature to Celsius, if in Farenheit.
+ */
 void Message::to_celsius()
 {
   if(_is_c)
@@ -207,6 +267,9 @@ void Message::to_celsius()
   _is_c = true;
 }
 
+/**
+ * Converts temperature to Farenheight, if in Celsius.
+ */
 void Message::to_farenheit()
 {
   if(!_is_c)

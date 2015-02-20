@@ -32,6 +32,11 @@ enum ParseResults
   OVER_TEMP
 };
 
+/**
+ * Base class for handling logic of interfacing with the KVH IMU. Delegates
+ * actual reading to a derived class, so that alternate interfaces can be
+ * considered.
+ */
 class KVHBase
 {
 public:
@@ -54,7 +59,8 @@ protected:
 };
 
 /**
- * Interface to a KVH1750 over RS-485
+ * Interface to a KVH1750 over RS-422, with support for the TOV signal
+ * via a file descriptor.
  */
 class KVH1750 : public KVHBase
 {
