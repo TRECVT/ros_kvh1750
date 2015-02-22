@@ -1,89 +1,87 @@
 /**
- * Interfacing with KVH 1750 over RSS-422.
- * \author Jason Ziglar <jpz@vt.edu>, based on code form Eric L. Hahn <erichahn@vt.edu>
- * \date 02/15/2014
- * Copyright 2014, Virginia Tech. All Rights Reserved.
+ * Base interface for KVH IMU
+ * \author Jason Ziglar <jpz@vt.edu>
+ * \date 02/15/2015
+ * Copyright 2015, Virginia Tech. All Rights Reserved.
  */
-#ifndef __KVH_1750_IMU_h__
-#define __KVH_1750_IMU_h__
+#ifndef _KVH_1750_IMU_BASE_h_
+#define _KVH_1750_IMU_BASE_h_
 
 #include "kvh1750/types.h"
 
-#include <sys/epoll.h>
+#include <memory>
 
-#include <chrono>
-
-#include <vector>
-
-namespace trec
+namespace kvh
 {
-
-/**
- * Reasons why a processing attempt might fail
- */
-enum ParseResults
-{
-  VALID = 0,
-  BAD_SIZE,
-  BAD_READ,
-  FATAL_ERROR,
-  BAD_CRC,
-  PARTIAL_READ,
-  OVER_TEMP
-};
 
 /**
  * Base class for handling logic of interfacing with the KVH IMU. Delegates
  * actual reading to a derived class, so that alternate interfaces can be
  * considered.
  */
-class KVHBase
+class IMU1750
 {
 public:
-  KVHBase();
-  virtual ~KVHBase() =default;
+  /**
+   * Reasons why a processing attempt might fail
+   */
+  typedef enum
+  {
+    VALID = 0,
+    BAD_READ,
+    FATAL_ERROR,
+    BAD_CRC,
+    PARTIAL_READ,
+    OVER_TEMP
+  } ParseResults;
+  static const std::vector<int> DataRates; //! Supported IMU Data Rates
+public:
+  IMU1750(std::shared_ptr<IOModule> mod);
+  ~IMU1750();
 
-  size_t read(kvh::Message& msg);
+  void set_temp_limit(int max_temp_c);
+
+  ParseResults read(kvh::Message& msg);
+
+  int imu_rate() const;
+  bool is_celsius() const;
+  bool is_delta_angle() const;
+  bool is_configuring() const;
+  bool query_temp_units(bool& is_celsius);
+  bool query_angle_units(bool& is_da);
+  bool query_data_rate(int& rate_hz);
+  bool set_temp_units(bool is_celius);
+  bool set_data_rate(int rate_hz);
+  bool set_angle_units(bool is_da);
   //TODO: Add configuration commands
 protected:
-  virtual size_t read(std::vector<char>& buff, uint64_t& secs,
-    uint64_t& nsecs, bool& is_c, bool& is_da) = 0;
-
-  bool find_header(std::vector<char>::iterator& match);
+  void set_mode(bool is_config);
+  bool parse_angle_units(std::vector<char>::iterator match);
+  bool parse_temp_units(std::vector<char>::iterator match);
+  bool parse_data_rate(std::vector<char>::iterator match, int& rate);
+  bool base_read(bool use_tov = true);
+  bool cmd_read();
+  void cmd_write(const std::string& cmd);
+  bool find_header(bool is_imu, std::vector<char>::iterator& match);
   void reset_buffer();
   void reset_partial_buffer(const std::vector<char>::iterator& match);
   size_t bytes_remaining() const;
+  void set_buffer_size(size_t len);
+
+  std::string build_command(const std::string& type, const std::string& val,
+    bool is_query);
+  bool find_response(const std::string& type, std::vector<char>::iterator& match);
 protected:
-  std::vector<char> _buff;
-  size_t _bytes_read;
+  std::shared_ptr<IOModule> _io; //! IO interface
+  std::vector<char> _buff; //! Internal buffer
+  size_t _bytes_read; //! Number of bytes read into the buffer
+  int _rate; //! Last read date rate of IMU
+  int _max_temp; //! Max temperature of IMU allowed
+  bool _is_config; //! In config mode
+  bool _is_c; //! Last read temperature units (true if Celsius)
+  bool _is_da; //! Last read angle units (true if delta angle)
 };
 
-/**
- * Interface to a KVH1750 over RS-422, with support for the TOV signal
- * via a file descriptor.
- */
-class KVH1750 : public KVHBase
-{
-public:
-  static const int DefaultTimeout = -1; //Blocking
-  static const size_t NumEvents = 1;
-public:
-  KVH1750(const std::string& addr = "/dev/ttyS4", int tm = DefaultTimeout);
-  virtual ~KVH1750();
-
-protected:
-  virtual size_t read(std::vector<char>& buff, uint64_t& secs,
-    uint64_t& nsecs, bool& is_c, bool& is_da);
-
-protected:
-  typedef std::chrono::high_resolution_clock::duration duration_t;
-  int _fd;
-  int _efd;
-  int _timeout;
-  epoll_event _events[NumEvents];
-  duration_t _tm;
-};
-
-};
+}
 
 #endif

@@ -163,18 +163,30 @@ int16_t Message::temp() const
   return _temp;
 }
 
+/**
+ * Accesses temperature, and returns flag indicating units.
+ * \param[in,out] Flag indicating if temperature is in Celsius
+ * \param[out] Temperature, rounded to nearest degree
+ */
 int16_t Message::temp(bool& is_c) const
 {
   is_c = _is_c;
   return _temp;
 }
 
+/**
+ * Returns the time this message was recorded.
+ */
 void Message::time(uint32_t& secs, uint32_t& nsecs) const
 {
   secs = _secs;
   nsecs = _nsecs;
 }
 
+/**
+ * Sequential Number from IMU.
+ * \param[out] Number
+ */
 uint8_t Message::sequence_number() const
 {
   return _seq;
@@ -263,7 +275,7 @@ void Message::to_celsius()
     return;
   }
 
-  _temp = static_cast<int16_t>((static_cast<double>(_temp) - CF_Offset) * FC_Scale);
+  _temp = to_c(_temp);
   _is_c = true;
 }
 
@@ -277,8 +289,24 @@ void Message::to_farenheit()
     return;
   }
 
-  _temp = static_cast<int16_t>((static_cast<double>(_temp) * CF_Scale) + CF_Offset);
+  _temp = to_f(_temp);
   _is_c = false;
+}
+
+/**
+ * Free function converting to Celsius.
+ */
+int16_t to_c(int16_t temp)
+{
+  return static_cast<int16_t>((static_cast<double>(temp) - CF_Offset) * FC_Scale);
+}
+
+/**
+ * Free function converting to Farenheit.
+ */
+int16_t to_f(int16_t temp)
+{
+  return static_cast<int16_t>((static_cast<double>(temp) * CF_Scale) + CF_Offset);
 }
 
 /**

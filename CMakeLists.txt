@@ -38,8 +38,11 @@ include_directories(
 )
 
 add_library(kvh1750
+            src/iomodule.cpp
             src/types.cpp
             src/imu.cpp
+            src/tov_file.cpp
+            src/bit_message.cpp
            )
 
 catkin_add_gtest(kvh1750-test test/utest.cpp)

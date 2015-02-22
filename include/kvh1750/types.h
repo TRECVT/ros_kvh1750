@@ -6,7 +6,33 @@
 #ifndef _KVH_1750_TYPES_H_
 #define _KVH_1750_TYPES_H_
 
+#include "bit_message.h"
+#include "iomodule.h"
+
+//Make C++11x support not required
+#if __cplusplus >= 201103L
 #include <array>
+//C++11 macro for casting ints to chars, to avoid narrowing
+namespace util
+{
+template <typename... A>
+constexpr std::array<char, sizeof...(A)> byte_array(A... v)
+{ return std::array<char, sizeof...(A)>{{static_cast<char>(v)...}}; }
+
+}
+
+#define MAKE_BYTE_ARRAY(...) util::byte_array(__VA_ARGS__)
+
+#define ARRAY_TYPE std::array
+
+#else
+
+#include <tr1/array>
+
+#define MAKE_BYTE_ARRAY(...) {__VA_ARGS__}
+#define ARRAY_TYPE std::tr1::array
+
+#endif
 
 #include <string>
 #include <stdint.h>
@@ -14,15 +40,15 @@
 namespace kvh
 {
 
-//C++11 macro for casting ints to chars, to avoid narrowing
-template <typename... A>
-constexpr std::array<char, sizeof...(A)> byte_array(A... v)
-{ return std::array<char, sizeof...(A)>{{static_cast<char>(v)...}}; }
-
 //! Constant for convering accelerations to floating point values
 const float Gravity = 9.80665;
-//! Header which starts every KVH message
-const std::array<char, 4> Header = byte_array(0xFE, 0x81, 0xFF, 0x55);
+
+const size_t HeaderSize = 4;
+typedef ARRAY_TYPE<char, HeaderSize> HeaderType;
+//! IMU Message Header
+const HeaderType IMUHeader = MAKE_BYTE_ARRAY(0xFE, 0x81, 0xFF, 0x55);
+//! BIT Message Header
+const HeaderType BITHeader = MAKE_BYTE_ARRAY(0xFE, 0x81, 0x00, 0xAA);
 //! Max operating temperature of the KVH 1750
 const int16_t MaxTemp_C = 75;
 
@@ -40,6 +66,14 @@ typedef enum
   ACCEL_Z = 1 << 6
 } StatusBits;
 
+typedef enum
+{
+  X = 0,
+  Y,
+  Z,
+  NUM_FIELDS
+} FieldOrder;
+
 //! CRC Computation values from KVH
 namespace crc
 {
@@ -48,28 +82,31 @@ const size_t Width = 32;
 //! Starting Polynomial value
 const uint64_t Poly = 0x04C11DB7;
 //! Mask for XOr Input operation
-const uint64_t XOr_In = 0xFFFFFFFF;
+const uint32_t XOr_In = 0xFFFFFFFF;
 //! Mask XOr Output Operation
-const uint64_t XOr_Out = 0x0u;
+const uint32_t XOr_Out = 0x0u;
 //! Reflect In Flag
 const bool Reflect_In = false;
 //! Reflect Out Flag
 const bool Reflect_Out = false;
 }
 
+#pragma pack(push, 1)
 /**
  * Raw message format from KVH, straight off the wire
  */
 struct RawMessage
 {
-  char Header[4];
-  float rots[3];
-  float accels[3];
+  char header[HeaderSize];
+  float rots[NUM_FIELDS];
+  float accels[NUM_FIELDS];
   uint8_t status;
   uint8_t seq;
   int16_t temp;
   uint32_t crc;
 };
+
+#pragma pack(pop)
 
 /**
  * Usable form of KVH message. Importantly, data is in valid units.
@@ -112,13 +149,6 @@ public:
   void to_celsius();
   void to_farenheit();
 protected:
-  typedef enum
-  {
-    X = 0,
-    Y,
-    Z,
-    NUM_FIELDS
-  } Indices;
   float _ang_vel[NUM_FIELDS];
   float _lin_accel[NUM_FIELDS];
   uint32_t _secs;
@@ -129,6 +159,9 @@ protected:
   bool _is_da;
   bool _is_c;
 };
+
+int16_t to_c(int16_t temp);
+int16_t to_f(int16_t temp);
 
 bool valid_checksum(const RawMessage& msg);
 uint32_t compute_checksum(const char* buff, size_t len);

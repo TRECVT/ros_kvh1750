@@ -84,18 +84,44 @@ int main(int argc, char **argv)
   std::string imu_link_name = DefaultImuLink;
   nh.getParam("imu_link_name", imu_link_name);
 
+  int rate = -1;
+
+  nh.getParam("imu_rate", rate);
+
+  std::vector<double> ang_cov;
+  std::vector<double> lin_cov;
+
+  if(nh.getParam("angular_covariance", ang_cov))
+  {
+    current_imu.angular_velocity_covariance = ang_cov;
+  }
+  else
+  {
+    current_imu.angular_velocity_covariance[0] = 1;
+    current_imu.angular_velocity_covariance[4] = 1;
+    current_imu.angular_velocity_covariance[8] = 1;
+  }
+
+  if(nh.getParam("linear_covariance", lin_cov))
+  {
+    current_imu.linear_acceleration_covariance = lin_cov;
+  }
+  else
+  {
+    current_imu.linear_acceleration_covariance[0] = 1;
+    current_imu.linear_acceleration_covariance[4] = 1;
+    current_imu.linear_acceleration_covariance[8] = 1;
+  }
+
+  bool use_delta_angles = true;
+
+  nh.getParam("use_delta_angles", use_delta_angles);
+
   size_t cache_counter = 0;
   trooper_mlc_msgs::CachedRawIMUData cached_imu;
   sensor_msgs::Imu current_imu;
   sensor_msgs::Temperature current_temp;
 
-  //Static Settings
-  current_imu.angular_velocity_covariance[0] = -1;
-  current_imu.angular_velocity_covariance[4] = -1;
-  current_imu.angular_velocity_covariance[8] = -1;
-  current_imu.linear_acceleration_covariance[0] = -1;
-  current_imu.linear_acceleration_covariance[4] = -1;
-  current_imu.linear_acceleration_covariance[8] = -1;
   //IMU link locations
   current_temp.header.frame_id = imu_link_name;
   current_imu.header.frame_id = imu_link_name;
@@ -103,15 +129,34 @@ int main(int argc, char **argv)
 
   std::string addr = DefaultAddress;
   nh.getParam("imu_address", addr);
-  std::shared_ptr<trec::KVHBase> kvh = std::shared_ptr<trec::KVHBase>(new trec::KVH1750(addr));
+
+  int max_temp = kvh::MaxTemp_C;
+
+  nh.getParam("max_temp", max_temp);
+
+  std::shared_ptr<kvh::IOModule> mod(new kvh::TOVFile(addr));
+  kvh::IMU1750 imu(mod);
+
+  imu.set_temp_limit(max_temp);
+  if(!imu.set_angle_units(use_delta_angles))
+  {
+    ROS_ERROR("Could not set angle units.");
+  }
+  if(rate > 0)
+  {
+    if(!imu.set_data_rate(rate))
+    {
+      ROS_ERROR("Could not set data rate to %d", rate);
+    }
+  }
 
   bool keep_reading = true;
   while(ros::ok() && keep_reading)
   {
     kvh::Message msg;
-    switch(kvh->read(msg))
+    switch(imu.read(msg))
     {
-      case trec::VALID:
+      case kvh::IMU1750::VALID:
         to_ros(msg, current_imu, current_temp);
         if(cache_imu(msg, cached_imu, cache_counter))
         {
@@ -120,20 +165,19 @@ int main(int argc, char **argv)
         imu_pub.publish(current_imu);
         temp_pub.publish(current_temp);
         break;
-      case trec::BAD_SIZE:
-      case trec::BAD_READ:
-      case trec::BAD_CRC:
+      case kvh::IMU1750::BAD_READ:
+      case kvh::IMU1750::BAD_CRC:
         ROS_ERROR("Bad data from KVH, ignoring.");
         break;
-      case trec::FATAL_ERROR:
+      case kvh::IMU1750::FATAL_ERROR:
         ROS_FATAL("Lost connection to IMU!"); //should reconnect
         keep_reading = false;
         break;
-      case trec::OVER_TEMP:
+      case kvh::IMU1750::OVER_TEMP:
         ROS_FATAL("IMU is overheating!");
         keep_reading = false;
         break;
-      case trec::PARTIAL_READ:
+      case kvh::IMU1750::PARTIAL_READ:
       default:
       break;
     }
