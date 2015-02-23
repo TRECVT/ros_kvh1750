@@ -83,7 +83,7 @@ TOVFile::TOVFile(const std::string& addr, int tm, const std::string& tov_addr)
   //note: first element of events is being used for control
   //to reduce memory usage slightly
   _events[0].data.fd = dummy_fd;
-  _events[0].events = EPOLLIN | EPOLLET;
+  _events[0].events = EPOLLIN;// | EPOLLET;
   res = epoll_ctl(_tov_efd, EPOLL_CTL_ADD, dummy_fd, &_events[0]);
 
   if(res < 0)
@@ -119,7 +119,7 @@ bool TOVFile::read(char* buff, size_t max_bytes, size_t& bytes, bool tov)
   ;
   int num_events = 0;
   //wait on TOV if available and desired, direct input otherwise
-  int wait_fd = (_valid_tm && !tov ? _efd : _tov_efd);
+  int wait_fd = (_valid_tm || !tov ? _efd : _tov_efd);
   num_events = epoll_wait(wait_fd, &_events[0], TOVFile::NumEvents, _timeout);
   //grab time immediately in case we need it
   duration_t wait = std::chrono::high_resolution_clock::now().time_since_epoch();

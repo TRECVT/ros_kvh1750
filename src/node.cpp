@@ -9,7 +9,7 @@
 #include <ros/ros.h>
 #pragma GCC diagnostic pop
 
-#include "kvh1750/imu.h"
+#include "kvh1750/tov_file.h"
 #include <trooper_mlc_msgs/CachedRawIMUData.h>
 #include <sensor_msgs/Temperature.h>
 #include <sensor_msgs/Imu.h>
@@ -82,36 +82,11 @@ int main(int argc, char **argv)
   ros::Publisher temp_pub = nh.advertise<sensor_msgs::Temperature>("temp", 1);
   ros::Publisher cache_pub = nh.advertise<trooper_mlc_msgs::CachedRawIMUData>("cached", 1);
   std::string imu_link_name = DefaultImuLink;
-  nh.getParam("imu_link_name", imu_link_name);
+  nh.getParam("link_name", imu_link_name);
 
   int rate = -1;
 
-  nh.getParam("imu_rate", rate);
-
-  std::vector<double> ang_cov;
-  std::vector<double> lin_cov;
-
-  if(nh.getParam("angular_covariance", ang_cov))
-  {
-    current_imu.angular_velocity_covariance = ang_cov;
-  }
-  else
-  {
-    current_imu.angular_velocity_covariance[0] = 1;
-    current_imu.angular_velocity_covariance[4] = 1;
-    current_imu.angular_velocity_covariance[8] = 1;
-  }
-
-  if(nh.getParam("linear_covariance", lin_cov))
-  {
-    current_imu.linear_acceleration_covariance = lin_cov;
-  }
-  else
-  {
-    current_imu.linear_acceleration_covariance[0] = 1;
-    current_imu.linear_acceleration_covariance[4] = 1;
-    current_imu.linear_acceleration_covariance[8] = 1;
-  }
+  nh.getParam("rate", rate);
 
   bool use_delta_angles = true;
 
@@ -122,13 +97,41 @@ int main(int argc, char **argv)
   sensor_msgs::Imu current_imu;
   sensor_msgs::Temperature current_temp;
 
+
+  std::vector<double> ang_cov;
+  std::vector<double> lin_cov;
+
+  if(nh.getParam("angular_covariance", ang_cov))
+  {
+    std::copy(ang_cov.begin(), ang_cov.end(),
+      current_imu.angular_velocity_covariance.begin());
+  }
+  else
+  {
+    current_imu.angular_velocity_covariance[0] = 1;
+    current_imu.angular_velocity_covariance[4] = 1;
+    current_imu.angular_velocity_covariance[8] = 1;
+  }
+
+  if(nh.getParam("linear_covariance", lin_cov))
+  {
+    std::copy(lin_cov.begin(), lin_cov.end(),
+      current_imu.linear_acceleration_covariance.begin());
+  }
+  else
+  {
+    current_imu.linear_acceleration_covariance[0] = 1;
+    current_imu.linear_acceleration_covariance[4] = 1;
+    current_imu.linear_acceleration_covariance[8] = 1;
+  }
+
   //IMU link locations
   current_temp.header.frame_id = imu_link_name;
   current_imu.header.frame_id = imu_link_name;
   cached_imu.header.frame_id = imu_link_name;
 
   std::string addr = DefaultAddress;
-  nh.getParam("imu_address", addr);
+  nh.getParam("address", addr);
 
   int max_temp = kvh::MaxTemp_C;
 

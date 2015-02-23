@@ -141,21 +141,9 @@ bool IMU1750::query_temp_units(bool& celsius)
   if(status)
   {
     std::vector<char>::iterator match;
-    status = find_response(TUCmd, match);
+    status = find_response(TUCmd, match) && parse_temp_units(match);
     if(status)
     {
-      switch(*match)
-      {
-        case 'C':
-          _is_c = true;
-          break;
-        case 'F':
-          _is_c = false;
-          break;
-        default:
-          status = false;
-          break;
-      }
       celsius = _is_c;
     }
   }
@@ -208,6 +196,7 @@ bool IMU1750::query_data_rate(int& rate_hz)
     status = find_response(DRCmd, match) &&
       parse_data_rate(match, rate_hz);
   }
+  set_mode(false);
   return status;
 }
 
@@ -256,6 +245,7 @@ bool IMU1750::set_data_rate(int rate_hz)
   std::vector<char>::iterator match;
   bool status = cmd_read() && find_response(DRCmd, match);
 
+  set_mode(false);
   return status;
 }
 
@@ -266,7 +256,8 @@ bool IMU1750::set_data_rate(int rate_hz)
  */
 bool IMU1750::set_angle_units(bool is_da)
 {
-  std::string cmd = build_command(RFCmd, "", false);
+  const std::string val = (is_da ? "DELTA" : "RATE");
+  std::string cmd = build_command(RFCmd, val, false);
   set_mode(true);
   cmd_write(cmd);
 
@@ -280,6 +271,7 @@ bool IMU1750::set_angle_units(bool is_da)
       status = parse_angle_units(match);
     }
   }
+  set_mode(false);
   return status;
 }
 

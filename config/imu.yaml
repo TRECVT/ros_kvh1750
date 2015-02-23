@@ -1,1 +1,4 @@
-rate: 10.0
+rate: 1000
+use_delta_angles: true
+max_temp: 75
+address: /dev/ttyS5

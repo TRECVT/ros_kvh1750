@@ -98,8 +98,8 @@ const bool Reflect_Out = false;
 struct RawMessage
 {
   char header[HeaderSize];
-  float rots[NUM_FIELDS];
-  float accels[NUM_FIELDS];
+  int32_t rots[NUM_FIELDS];
+  int32_t accels[NUM_FIELDS];
   uint8_t status;
   uint8_t seq;
   int16_t temp;
