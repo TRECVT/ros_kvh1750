@@ -19,6 +19,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native")
 find_package(catkin REQUIRED COMPONENTS
              roscpp
              sensor_msgs
+             message_generation
             )
 
 generate_messages(
