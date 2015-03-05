@@ -1,5 +1,5 @@
-rate: 1000
+rate: 500
 use_delta_angles: true
 max_temp: 75
-address: /dev/ttyS5
-link_name: "torso"
+address: /dev/ttyS4
+link_name: "kvh_link"
