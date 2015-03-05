@@ -32,10 +32,11 @@ IMU1750::IMU1750(std::shared_ptr<IOModule> mod)
   _bytes_read(0),
   _rate(IMU1750::DataRates.back()),
   _max_temp(kvh::MaxTemp_C),
-  _is_config(false),
+  _is_config(true),
   _is_c(true),
   _is_da(true)
 {
+  set_mode(false);
   query_temp_units(_is_c);
   query_angle_units(_is_da);
   query_data_rate(_rate);
