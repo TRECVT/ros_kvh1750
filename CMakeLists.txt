@@ -56,7 +56,7 @@ target_link_libraries(kvh_1750_imu kvh1750 ${catkin_LIBRARIES}
                      )
 
 ##
-install(TARGETS kvh_1750_imu
+install(TARGETS kvh_1750_imu kvh1750
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
        )
