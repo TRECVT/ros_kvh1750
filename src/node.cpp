@@ -19,6 +19,8 @@ namespace
   const std::string DefaultImuLink = "torso";
   const std::string DefaultAddress = "/dev/ttyS4";
   const size_t ImuCacheSize = 15;
+  double CurrentPeriod = 1.0;
+  bool IsDA = true;
 }
 
 /**
@@ -36,6 +38,14 @@ void to_ros(const kvh::Message& msg, sensor_msgs::Imu& imu,
   imu.linear_acceleration.x = msg.accel_x();
   imu.linear_acceleration.y = msg.accel_y();
   imu.linear_acceleration.z = msg.accel_z();
+
+  //scale for ROS if delta angles are enabled
+  if(IsDA)
+  {
+    imu.angular_velocity.x *= CurrentPeriod;
+    imu.angular_velocity.y *= CurrentPeriod;
+    imu.angular_velocity.z *= CurrentPeriod;
+  }
 
   imu.orientation.w = 1.0;
   temp.header.stamp = imu.header.stamp;
@@ -153,6 +163,10 @@ int main(int argc, char **argv)
       ROS_ERROR("Could not set data rate to %d", rate);
     }
   }
+
+  imu.query_data_rate(rate);
+  CurrentPeriod = 1.0 / static_cast<double>(rate);
+  imu.query_angle_units(IsDA);
 
   bool keep_reading = true;
   while(ros::ok() && keep_reading)
