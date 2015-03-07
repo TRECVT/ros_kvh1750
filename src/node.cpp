@@ -37,6 +37,7 @@ void to_ros(const kvh::Message& msg, sensor_msgs::Imu& imu,
   imu.linear_acceleration.y = msg.accel_y();
   imu.linear_acceleration.z = msg.accel_z();
 
+  imu.orientation.w = 1.0;
   temp.header.stamp = imu.header.stamp;
   temp.temperature = msg.temp();
 }

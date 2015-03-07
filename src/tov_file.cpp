@@ -164,7 +164,7 @@ bool TOVFile::read(char* buff, size_t max_bytes, size_t& bytes, bool tov)
 bool TOVFile::write(const char* buff, size_t bytes)
 {
   ssize_t res = ::write(_fd, buff, bytes);
-  return (res > 0);
+  return (res == bytes);
 }
 
 /**

@@ -410,11 +410,11 @@ bool IMU1750::cmd_read()
 /**
  * Write command to IMU.
  */
-void IMU1750::cmd_write(const std::string& cmd)
+bool IMU1750::cmd_write(const std::string& cmd)
 {
   _io->flush_buffers();
   reset_buffer();
-  _io->write(cmd.c_str(), cmd.length());
+  return _io->write(cmd.c_str(), cmd.length());
 }
 
 /**

@@ -61,7 +61,7 @@ protected:
   bool parse_data_rate(std::vector<char>::iterator match, int& rate);
   bool base_read(bool use_tov = true);
   bool cmd_read();
-  void cmd_write(const std::string& cmd);
+  bool cmd_write(const std::string& cmd);
   bool find_header(bool is_imu, std::vector<char>::iterator& match);
   void reset_buffer();
   void reset_partial_buffer(const std::vector<char>::iterator& match);
