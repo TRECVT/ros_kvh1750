@@ -24,7 +24,7 @@ public:
   virtual bool read(uint8_t* buff, size_t max_bytes, size_t& bytes, bool tov = true) = 0;
   virtual bool write(const uint8_t* buff, size_t bytes) = 0;
   virtual void flush_buffers() = 0;
-  virtual void time(uint64_t& secs, uint64_t& nsecs) = 0;
+  virtual void time(uint32_t& secs, uint32_t& nsecs) = 0;
   virtual void reset_time() = 0;
 };
 

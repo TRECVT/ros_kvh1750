@@ -76,8 +76,8 @@ typename IMU1750::ParseResults IMU1750::read(kvh::Message& msg)
   if(header_start && _bytes_read >= sizeof(kvh::RawMessage))
   {
     //get timestamp from reading
-    uint64_t secs = 0;
-    uint64_t nsecs = 0;
+    uint32_t secs = 0;
+    uint32_t nsecs = 0;
     _io->time(secs, nsecs);
     kvh::RawMessage* raw = reinterpret_cast<kvh::RawMessage*>(&_buff.front());
     result = (msg.from_raw(*raw, secs, nsecs, _is_c, _is_da) ? VALID : BAD_CRC);

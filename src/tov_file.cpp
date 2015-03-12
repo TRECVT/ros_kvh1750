@@ -108,13 +108,11 @@ void TOVFile::flush_buffers()
  * \param[in,out] secs Seconds since epoch
  * \param[in,out] nsecs Nanoseconds since the Seconds field
  */
-void TOVFile::time(uint64_t& secs, uint64_t& nsecs)
+void TOVFile::time(uint32_t& secs, uint32_t& nsecs)
 {
-  duration_t d_secs = std::chrono::duration_cast<std::chrono::seconds>(_tm);
-  duration_t diff_t = _tm - d_secs;
-  duration_t d_nsecs = std::chrono::duration_cast<std::chrono::nanoseconds>(diff_t);
-  secs = d_secs.count();
-  nsecs = d_nsecs.count();
+  //TODO: Unhack this disaster
+  secs = _tm.count() / 1e9;
+  nsecs = _tm.count() - secs * 1e9;
 }
 
 /**

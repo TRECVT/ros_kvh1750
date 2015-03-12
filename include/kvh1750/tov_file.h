@@ -34,7 +34,7 @@ public:
   virtual bool read(uint8_t* buff, size_t max_bytes, size_t& bytes, bool tov);
   virtual bool write(const uint8_t* buff, size_t bytes);
   virtual void flush_buffers();
-  virtual void time(uint64_t& secs, uint64_t& nsecs);
+  virtual void time(uint32_t& secs, uint32_t& nsecs);
   virtual void reset_time();
 
 protected:
