@@ -28,7 +28,7 @@
 
 #endif
 
-typedef std::vector<char> ByteBuffer;
+typedef std::vector<uint8_t> ByteBuffer;
 typedef std::map<std::string, ByteBuffer> TestCases;
 
 struct DataCase
@@ -51,15 +51,15 @@ public:
   bool set_test_case(const std::string& name);
   std::vector<std::string> cases() const;
 protected:
-  virtual bool read(char* buff, size_t max_bytes, size_t& bytes, bool tov);
-  virtual bool write(const char* buff, size_t bytes);
+  virtual bool read(uint8_t* buff, size_t max_bytes, size_t& bytes, bool tov);
+  virtual bool write(const uint8_t* buff, size_t bytes);
   virtual void flush_buffers();
   virtual void time(uint64_t& secs, uint64_t& nsecs);
   virtual void reset_time();
 protected:
-  void add_case(const std::string& name, char* start, char* end,
+  void add_case(const std::string& name, uint8_t* start, uint8_t* end,
     const std::vector<size_t>& reads);
-  bool offset_read(const std::vector<char>& data, size_t& offset, char* buff,
+  bool offset_read(const std::vector<uint8_t>& data, size_t& offset, uint8_t* buff,
     size_t max_bytes, size_t& bytes_read);
 
   std::string processTemperature(const std::string& name, const std::string& args);
@@ -68,8 +68,8 @@ protected:
 protected:
   typedef std::chrono::high_resolution_clock::duration duration_t;
   std::map<std::string, DataCase> _cases;
-  std::vector<char> _response_data;
-  std::vector<char> _input;
+  std::vector<uint8_t> _response_data;
+  std::vector<uint8_t> _input;
   std::map<std::string, CommandProcessor> _processors;
   std::string _case;
   size_t _offset;
@@ -100,7 +100,7 @@ IOStub::IOStub() :
   _is_c(true)
 {
   //accelerometers only
-  std::array<char, sizeof(kvh::RawMessage)> valid =
+  std::array<uint8_t, sizeof(kvh::RawMessage)> valid =
     MAKE_BYTE_ARRAY(0xFE, 0x81, 0xFF, 0x55, 0x3B, 0x04, 0x1F, 0x78, 0xB9, 0xB9,
                     0x66, 0x13, 0xBA, 0x23, 0x4B, 0x38, 0xBB, 0x7C, 0x04, 0x10,
                     0xB8, 0xDE, 0xF4, 0x80, 0x3F, 0x7F, 0x4B, 0x7B, 0x70, 0x1F,
@@ -165,7 +165,7 @@ std::vector<std::string> IOStub::cases() const
 /**
  * Simplified read which draws from canned data.
  */
-bool IOStub::read(char* buff, size_t max_bytes, size_t& bytes, bool tov)
+bool IOStub::read(uint8_t* buff, size_t max_bytes, size_t& bytes, bool tov)
 {
   if(!_response_data.empty())
   {
@@ -197,7 +197,7 @@ bool IOStub::read(char* buff, size_t max_bytes, size_t& bytes, bool tov)
   return result;
 }
 
-bool IOStub::write(const char* buff, size_t bytes)
+bool IOStub::write(const uint8_t* buff, size_t bytes)
 {
   if(bytes == 0)
   {
@@ -282,14 +282,14 @@ void IOStub::reset_time()
   _tm = std::chrono::high_resolution_clock::duration::zero();
 }
 
-void IOStub::add_case(const std::string& name, char* start, char* end,
+void IOStub::add_case(const std::string& name, uint8_t* start, uint8_t* end,
   const std::vector<size_t>& reads)
 {
   _cases[name].data.assign(start, end);
   _cases[name].reads = reads;
 }
 
-bool IOStub::offset_read(const std::vector<char>& data, size_t& offset, char* buff,
+bool IOStub::offset_read(const std::vector<uint8_t>& data, size_t& offset, uint8_t* buff,
   size_t max_bytes, size_t& bytes_read)
 {
   if(!_valid_tm)

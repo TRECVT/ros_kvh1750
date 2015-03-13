@@ -144,11 +144,21 @@ int main(int argc, char **argv)
   std::string addr = DefaultAddress;
   nh.getParam("address", addr);
 
+  std::string tov_addr = "";
+  nh.getParam("tov_address", tov_addr);
+
+  uint32_t baud = 921600;
+  int read_baud; //Because rosparam can't provide unsigned ints
+  nh.getParam("baudrate", read_baud);
+  baud = static_cast<uint32_t>(read_baud);
+
   int max_temp = kvh::MaxTemp_C;
 
   nh.getParam("max_temp", max_temp);
 
-  std::shared_ptr<kvh::IOModule> mod(new kvh::TOVFile(addr));
+  uint32_t wait = 100;
+  std::shared_ptr<kvh::IOModule> mod(new kvh::TOVFile(addr, baud, wait,
+    tov_addr));
   kvh::IMU1750 imu(mod);
 
   imu.set_temp_limit(max_temp);

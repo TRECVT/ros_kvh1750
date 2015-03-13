@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
              roscpp
              sensor_msgs
              trooper_mlc_msgs
+             serial
             )
 
 catkin_package(
@@ -47,7 +48,7 @@ add_library(kvh1750
 
 catkin_add_gtest(kvh1750-test test/utest.cpp)
 if(TARGET ${PROJECT_NAME}-test)
-  target_link_libraries(kvh1750-test kvh1750)
+  target_link_libraries(kvh1750-test kvh1750 ${catkin_LIBRARIES})
 endif()
 
 ##

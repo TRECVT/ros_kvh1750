@@ -16,8 +16,8 @@
 namespace util
 {
 template <typename... A>
-constexpr std::array<char, sizeof...(A)> byte_array(A... v)
-{ return std::array<char, sizeof...(A)>{{static_cast<char>(v)...}}; }
+constexpr std::array<uint8_t, sizeof...(A)> byte_array(A... v)
+{ return std::array<uint8_t, sizeof...(A)>{{static_cast<uint8_t>(v)...}}; }
 
 }
 
@@ -44,7 +44,7 @@ namespace kvh
 const float Gravity = 9.80665;
 
 const size_t HeaderSize = 4;
-typedef ARRAY_TYPE<char, HeaderSize> HeaderType;
+typedef ARRAY_TYPE<uint8_t, HeaderSize> HeaderType;
 //! IMU Message Header
 const HeaderType IMUHeader = MAKE_BYTE_ARRAY(0xFE, 0x81, 0xFF, 0x55);
 //! BIT Message Header
@@ -97,7 +97,7 @@ const bool Reflect_Out = false;
  */
 struct RawMessage
 {
-  char header[HeaderSize];
+  uint8_t header[HeaderSize];
   int32_t rots[NUM_FIELDS];
   int32_t accels[NUM_FIELDS];
   uint8_t status;

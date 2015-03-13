@@ -3,3 +3,4 @@ use_delta_angles: true
 max_temp: 75
 address: /dev/ttyS4
 link_name: "kvh_link"
+baudrate: 921600

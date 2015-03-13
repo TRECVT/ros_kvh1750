@@ -56,24 +56,25 @@ public:
   //TODO: Add configuration commands
 protected:
   void set_mode(bool is_config);
-  bool parse_angle_units(std::vector<char>::iterator match);
-  bool parse_temp_units(std::vector<char>::iterator match);
-  bool parse_data_rate(std::vector<char>::iterator match, int& rate);
+  bool parse_angle_units(std::vector<uint8_t>::iterator match);
+  bool parse_temp_units(std::vector<uint8_t>::iterator match);
+  bool parse_data_rate(std::vector<uint8_t>::iterator match, int& rate);
   bool base_read(bool use_tov = true);
   bool cmd_read();
   bool cmd_write(const std::string& cmd);
-  bool find_header(bool is_imu, std::vector<char>::iterator& match);
+  bool find_header(bool is_imu, std::vector<uint8_t>::iterator& match);
   void reset_buffer();
-  void reset_partial_buffer(const std::vector<char>::iterator& match);
+  void reset_partial_buffer(const std::vector<uint8_t>::iterator& match);
   size_t bytes_remaining() const;
   void set_buffer_size(size_t len);
 
   std::string build_command(const std::string& type, const std::string& val,
     bool is_query);
-  bool find_response(const std::string& type, std::vector<char>::iterator& match);
+  bool find_response(const std::string& type, std::vector<uint8_t>::iterator& match);
 protected:
   std::shared_ptr<IOModule> _io; //! IO interface
-  std::vector<char> _buff; //! Internal buffer
+  std::vector<uint8_t> _buff; //! Internal buffer
+  std::vector<uint8_t> _backup_buff; //! Backup buffer for swapping
   size_t _bytes_read; //! Number of bytes read into the buffer
   int _rate; //! Last read date rate of IMU
   int _max_temp; //! Max temperature of IMU allowed
