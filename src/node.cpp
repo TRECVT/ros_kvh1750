@@ -19,7 +19,7 @@ namespace
   const std::string DefaultImuLink = "torso";
   const std::string DefaultAddress = "/dev/ttyS4";
   const size_t ImuCacheSize = 15;
-  double CurrentPeriod = 1.0;
+  int Rate;
   bool IsDA = true;
 }
 
@@ -42,9 +42,9 @@ void to_ros(const kvh::Message& msg, sensor_msgs::Imu& imu,
   //scale for ROS if delta angles are enabled
   if(IsDA)
   {
-    imu.angular_velocity.x *= CurrentPeriod;
-    imu.angular_velocity.y *= CurrentPeriod;
-    imu.angular_velocity.z *= CurrentPeriod;
+    imu.angular_velocity.x *= Rate;
+    imu.angular_velocity.y *= Rate;
+    imu.angular_velocity.z *= Rate;
   }
 
   imu.orientation.w = 1.0;
@@ -95,9 +95,7 @@ int main(int argc, char **argv)
   std::string imu_link_name = DefaultImuLink;
   nh.getParam("link_name", imu_link_name);
 
-  int rate = -1;
-
-  nh.getParam("rate", rate);
+  nh.param("rate", Rate, 100);
 
   bool use_delta_angles = true;
 
@@ -166,16 +164,15 @@ int main(int argc, char **argv)
   {
     ROS_ERROR("Could not set angle units.");
   }
-  if(rate > 0)
+  if(Rate > 0)
   {
-    if(!imu.set_data_rate(rate))
+    if(!imu.set_data_rate(Rate))
     {
-      ROS_ERROR("Could not set data rate to %d", rate);
+      ROS_ERROR("Could not set data rate to %d", Rate);
     }
   }
 
-  imu.query_data_rate(rate);
-  CurrentPeriod = 1.0 / static_cast<double>(rate);
+  imu.query_data_rate(Rate);
   imu.query_angle_units(IsDA);
 
   bool keep_reading = true;
