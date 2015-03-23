@@ -14,6 +14,8 @@
 #include <sensor_msgs/Temperature.h>
 #include <sensor_msgs/Imu.h>
 
+#include <sched.h>
+
 namespace
 {
   const std::string DefaultImuLink = "torso";
@@ -106,6 +108,26 @@ int main(int argc, char **argv)
   sensor_msgs::Imu current_imu;
   sensor_msgs::Temperature current_temp;
 
+  int priority = 99;
+  bool use_rt = true;
+
+  nh.getParam("priority", priority);
+  nh.getParam("use_rt", use_rt);
+
+  int policy = (use_rt ? SCHED_RR : SCHED_OTHER);
+
+  priority = std::min(sched_get_priority_max(policy),
+    std::max(sched_get_priority_min(policy), priority));
+
+  struct sched_param params;
+  params.sched_priority = (use_rt ? static_cast<int>(priority) : 0);
+
+  int rc = sched_setscheduler(0, policy, &params);
+  if(rc != 0)
+  {
+    ROS_ERROR("Setting schedule priority produced error: \"%s\"", strerror(errno));
+    return 1;
+  }
 
   std::vector<double> ang_cov;
   std::vector<double> lin_cov;
