@@ -50,10 +50,13 @@ TOVFile::~TOVFile()
  */
 bool TOVFile::read(uint8_t* buff, size_t max_bytes, size_t& bytes, bool use_tov)
 {
+  duration_t wait;
   if(_tov && use_tov)
   {
-    std::vector<uint8_t> wait_buff;
-    size_t bytes_read = _tov->read(wait_buff, 1);
+    std::vector<uint8_t> wait_buff(1, 0);
+    this->flush_buffers();
+    size_t bytes_read = _tov->read(wait_buff, wait_buff.size());
+    wait = std::chrono::high_resolution_clock::now().time_since_epoch();
     if(bytes_read == 0)
     {
       return false;
@@ -65,9 +68,8 @@ bool TOVFile::read(uint8_t* buff, size_t max_bytes, size_t& bytes, bool use_tov)
     {
       return false;
     }
+    wait = std::chrono::high_resolution_clock::now().time_since_epoch();
   }
-
-  duration_t wait = std::chrono::high_resolution_clock::now().time_since_epoch();
 
   //only update time if at start of new message
   if(!_valid_tm)
