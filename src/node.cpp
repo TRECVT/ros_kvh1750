@@ -71,8 +71,8 @@ bool cache_imu(const kvh::Message& msg, trooper_mlc_msgs::CachedRawIMUData& cach
   uint32_t secs = 0;
   uint32_t nsecs = 0;
   msg.time(secs, nsecs);
-  imu.imu_timestamp = static_cast<uint64_t>(secs * 1.0E-6) +
-  static_cast<uint64_t>(nsecs + 1.0E3);
+  imu.imu_timestamp = static_cast<uint64_t>(secs * 1.0E6) +
+    static_cast<uint64_t>(nsecs * 1.0E-3);
   imu.packet_count = msg.sequence_number();
   imu.dax = msg.gyro_x();
   imu.day = msg.gyro_y();
