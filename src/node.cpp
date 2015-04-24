@@ -7,6 +7,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #include <ros/ros.h>
+#include <tf/tf.h>
 #pragma GCC diagnostic pop
 
 #include "kvh1750/tov_file.h"
@@ -23,6 +24,10 @@ namespace
   const size_t ImuCacheSize = 15;
   int Rate;
   bool IsDA = true;
+  double Ahrs_gyro_x = 0,
+    Ahrs_gyro_y = 0,
+    Ahrs_gyro_z = 0;
+  double Prev_stamp = 0;
 }
 
 /**
@@ -44,12 +49,34 @@ void to_ros(const kvh::Message& msg, sensor_msgs::Imu& imu,
   //scale for ROS if delta angles are enabled
   if(IsDA)
   {
+    Ahrs_gyro_x += msg.gyro_x();
+    Ahrs_gyro_y += msg.gyro_y();
+    Ahrs_gyro_z += msg.gyro_z();
+
     imu.angular_velocity.x *= Rate;
     imu.angular_velocity.y *= Rate;
     imu.angular_velocity.z *= Rate;
   }
+  else
+  {
+    double current_stamp = imu.header.stamp.sec + imu.header.stamp.nsec * 1E-9;
+    double deltatime;
+    if (Prev_stamp)
+    {
+      deltatime = current_stamp - Prev_stamp;
+    }
+    else
+    {
+      deltatime = 1/Rate;
+    }
+    Ahrs_gyro_x += msg.gyro_x()*deltatime;
+    Ahrs_gyro_y += msg.gyro_y()*deltatime;
+    Ahrs_gyro_z += msg.gyro_z()*deltatime;
+    Prev_stamp = current_stamp;
+  }
 
-  imu.orientation.w = 1.0;
+  imu.orientation = tf::createQuaternionMsgFromRollPitchYaw(Ahrs_gyro_x,
+    Ahrs_gyro_y, Ahrs_gyro_z);
   temp.header.stamp = imu.header.stamp;
   temp.temperature = msg.temp();
 }
@@ -129,8 +156,13 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  std::vector<double> ahrs_cov;
   std::vector<double> ang_cov;
   std::vector<double> lin_cov;
+
+  nh.param<std::vector<double>>("orientation_covariance", ahrs_cov, {1, 0, 0, 0, 1, 0, 0, 0, 1});
+  std::copy(ahrs_cov.begin(), ahrs_cov.end(),
+    current_imu.orientation_covariance.begin());
 
   if(nh.getParam("angular_covariance", ang_cov))
   {

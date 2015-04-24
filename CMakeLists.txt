@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
              sensor_msgs
              trooper_mlc_msgs
              serial
+             tf
             )
 
 catkin_package(
