@@ -239,6 +239,7 @@ int main(int argc, char **argv)
         to_ros(msg, current_imu, current_temp);
         if(cache_imu(msg, cached_imu, cache_counter))
         {
+          msg.time(cached_imu.header.stamp.sec, cached_imu.header.stamp.nsec);
           cache_pub.publish(cached_imu);
         }
         imu_pub.publish(current_imu);
