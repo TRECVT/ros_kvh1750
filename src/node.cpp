@@ -92,7 +92,6 @@ bool cache_imu(const kvh::Message& msg, trooper_mlc_msgs::CachedRawIMUData& cach
   if(counter >= ImuCacheSize)
   {
     counter = 0;
-    return false;
   }
 
   trooper_mlc_msgs::RawIMUData& imu = cache.data[counter];
