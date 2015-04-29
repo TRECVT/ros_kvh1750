@@ -24,10 +24,11 @@ namespace
   const size_t ImuCacheSize = 15;
   int Rate;
   bool IsDA = true;
-  double Ahrs_gyro_x = 0,
-    Ahrs_gyro_y = 0,
-    Ahrs_gyro_z = 0;
+  double Ahrs_gyro_x = 0;
+  double Ahrs_gyro_y = 0;
+  double Ahrs_gyro_z = 0;
   double Prev_stamp = 0;
+  size_t CachedMsgCounter = 0;
 }
 
 /**
@@ -100,7 +101,7 @@ bool cache_imu(const kvh::Message& msg, trooper_mlc_msgs::CachedRawIMUData& cach
   msg.time(secs, nsecs);
   imu.imu_timestamp = static_cast<uint64_t>(secs * 1.0E6) +
     static_cast<uint64_t>(nsecs * 1.0E-3);
-  imu.packet_count = msg.sequence_number();
+  imu.packet_count = CachedMsgCounter++;
   imu.dax = msg.gyro_x();
   imu.day = msg.gyro_y();
   imu.daz = msg.gyro_z();
