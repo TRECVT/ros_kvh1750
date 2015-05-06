@@ -14,7 +14,7 @@
 #include <trooper_mlc_msgs/CachedRawIMUData.h>
 #include <sensor_msgs/Temperature.h>
 #include <sensor_msgs/Imu.h>
-
+#include <boost/circular_buffer.hpp>
 #include <sched.h>
 
 namespace
@@ -29,6 +29,7 @@ namespace
   double Ahrs_gyro_z = 0;
   double Prev_stamp = 0;
   size_t CachedMsgCounter = 0;
+  boost::circular_buffer<trooper_mlc_msgs::RawIMUData> ImuCache(ImuCacheSize);
 }
 
 /**
@@ -86,15 +87,9 @@ void to_ros(const kvh::Message& msg, sensor_msgs::Imu& imu,
  * Adds a single IMU reading to the cached value. If the cache is full, this
  * resets the counter and returns true.
  */
-bool cache_imu(const kvh::Message& msg, trooper_mlc_msgs::CachedRawIMUData& cache,
-  size_t& counter)
+void cache_imu(const kvh::Message& msg)
 {
-  if(counter >= ImuCacheSize)
-  {
-    counter = 0;
-  }
-
-  trooper_mlc_msgs::RawIMUData& imu = cache.data[counter];
+  trooper_mlc_msgs::RawIMUData imu;
   uint32_t secs = 0;
   uint32_t nsecs = 0;
   msg.time(secs, nsecs);
@@ -108,8 +103,7 @@ bool cache_imu(const kvh::Message& msg, trooper_mlc_msgs::CachedRawIMUData& cach
   imu.ddy = msg.accel_y();
   imu.ddz = msg.accel_z();
 
-  //if the pre-increment sets it to 15, will be set to 0 and return true
-  return (++counter % ImuCacheSize) == 0;
+  ImuCache.push_back(imu);
 }
 
 int main(int argc, char **argv)
@@ -130,7 +124,6 @@ int main(int argc, char **argv)
 
   nh.getParam("use_delta_angles", use_delta_angles);
 
-  size_t cache_counter = 0;
   trooper_mlc_msgs::CachedRawIMUData cached_imu;
   sensor_msgs::Imu current_imu;
   sensor_msgs::Temperature current_temp;
@@ -160,7 +153,8 @@ int main(int argc, char **argv)
   std::vector<double> ang_cov;
   std::vector<double> lin_cov;
 
-  nh.param<std::vector<double>>("orientation_covariance", ahrs_cov, {1, 0, 0, 0, 1, 0, 0, 0, 1});
+  nh.param<std::vector<double>>("orientation_covariance",
+    ahrs_cov, {1, 0, 0, 0, 1, 0, 0, 0, 1});
   std::copy(ahrs_cov.begin(), ahrs_cov.end(),
     current_imu.orientation_covariance.begin());
 
@@ -237,9 +231,12 @@ int main(int argc, char **argv)
     {
       case kvh::IMU1750::VALID:
         to_ros(msg, current_imu, current_temp);
-        if(cache_imu(msg, cached_imu, cache_counter))
+        cache_imu(msg);
+        if(CachedMsgCounter >= ImuCacheSize)
         {
           msg.time(cached_imu.header.stamp.sec, cached_imu.header.stamp.nsec);
+          std::reverse_copy(ImuCache.begin(), ImuCache.end(), 
+            cached_imu.data.begin());
           cache_pub.publish(cached_imu);
         }
         imu_pub.publish(current_imu);
