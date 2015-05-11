@@ -11,8 +11,6 @@ else()
   message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native")
-
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -54,8 +52,9 @@ endif()
 
 ##
 add_executable(kvh_1750_imu src/node.cpp)
-target_link_libraries(kvh_1750_imu kvh1750 ${catkin_LIBRARIES}
-                     )
+target_link_libraries(kvh_1750_imu kvh1750 ${catkin_LIBRARIES})
+
+add_dependencies(kvh_1750_imu trooper_mlc_msgs_generate_messages_cpp)
 
 ##
 install(TARGETS kvh_1750_imu kvh1750
