@@ -1,4 +1,4 @@
-rate: 1000
+rate: 100
 use_delta_angles: true
 max_temp: 75
 address: /dev/ttyS4
