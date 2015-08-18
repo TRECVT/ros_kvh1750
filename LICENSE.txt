@@ -2,11 +2,7 @@
 <ORGANIZATION> = Virginia Polytechnic Institute and State University
 <YEAR> = 2014
 
-In the original BSD license, the occurrence of "copyright holder" in the 3rd clause read "ORGANIZATION", placeholder for "University of California". In the original BSD license, both occurrences of the phrase "COPYRIGHT HOLDERS AND CONTRIBUTORS" in the disclaimer read "REGENTS AND CONTRIBUTORS".
-
-Here is the license template:
-
-Copyright (c) <YEAR>, <OWNER>
+Copyright (c) <YEAR>, <OWNER>, <ORGANIZATION>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
