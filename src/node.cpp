@@ -23,14 +23,14 @@ namespace
 {
   const std::string DefaultImuLink = "torso";
   const std::string DefaultAddress = "/dev/ttyS4";
-  const size_t ImuCacheSize = 15;
+  //const size_t ImuCacheSize = 15;
   int Rate;
   bool IsDA = true;
   double Ahrs_gyro_x = 0;
   double Ahrs_gyro_y = 0;
   double Ahrs_gyro_z = 0;
   double Prev_stamp = 0;
-  size_t CachedMsgCounter = 0;
+  //size_t CachedMsgCounter = 0;
   // boost::circular_buffer<trooper_mlc_msgs::RawIMUData> ImuCache(ImuCacheSize);
   boost::shared_ptr<kvh::KVHMessageProcessorBase> Plugin;
 }
@@ -124,11 +124,10 @@ int main(int argc, char **argv)
   nh.getParam("processor_type", plugin_name);
   if(!plugin_name.empty())
   {
-    pluginlib::ClassLoader<kvh::KVHMessageProcessorBase> plugin_loader =
-      pluginlib::ClassLoader<kvh::KVHMessageProcessorBase>("kvh1750", "kvh::KVHMessageProcessorBase");
+    pluginlib::ClassLoader<kvh::KVHMessageProcessorBase> plugin_loader("kvh1750", "kvh::KVHMessageProcessorBase");
     Plugin = plugin_loader.createInstance(plugin_name);
   }
-  ros::Publisher cache_pub = nh.advertise<trooper_mlc_msgs::CachedRawIMUData>("cached", 1);
+  //ros::Publisher cache_pub = nh.advertise<trooper_mlc_msgs::CachedRawIMUData>("cached", 1);
   std::string imu_link_name = DefaultImuLink;
   nh.getParam("link_name", imu_link_name);
 
@@ -138,7 +137,7 @@ int main(int argc, char **argv)
 
   nh.getParam("use_delta_angles", use_delta_angles);
 
-  trooper_mlc_msgs::CachedRawIMUData cached_imu;
+  //trooper_mlc_msgs::CachedRawIMUData cached_imu;
   sensor_msgs::Imu current_imu;
   sensor_msgs::Temperature current_temp;
 
@@ -199,7 +198,7 @@ int main(int argc, char **argv)
   //IMU link locations
   current_temp.header.frame_id = imu_link_name;
   current_imu.header.frame_id = imu_link_name;
-  cached_imu.header.frame_id = imu_link_name;
+  //cached_imu.header.frame_id = imu_link_name;
 
   std::string addr = DefaultAddress;
   nh.getParam("address", addr);

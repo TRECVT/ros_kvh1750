@@ -17,9 +17,9 @@ endif()
 find_package(catkin REQUIRED COMPONENTS
              roscpp
              sensor_msgs
-             trooper_mlc_msgs
              serial
              tf
+             pluginlib
             )
 
 catkin_package(
@@ -53,8 +53,6 @@ endif()
 ##
 add_executable(kvh_1750_imu src/node.cpp)
 target_link_libraries(kvh_1750_imu kvh1750 ${catkin_LIBRARIES})
-
-add_dependencies(kvh_1750_imu trooper_mlc_msgs_generate_messages_cpp)
 
 ##
 install(TARGETS kvh_1750_imu kvh1750
