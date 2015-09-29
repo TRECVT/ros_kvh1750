@@ -8,10 +8,12 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 #include <ros/ros.h>
 #include <tf/tf.h>
+#include <pluginlib/class_loader.h>
 #pragma GCC diagnostic pop
 
 #include "kvh1750/tov_file.h"
-#include <trooper_mlc_msgs/CachedRawIMUData.h>
+#include "kvh1750/kvh_plugin.h"
+// #include <trooper_mlc_msgs/CachedRawIMUData.h>
 #include <sensor_msgs/Temperature.h>
 #include <sensor_msgs/Imu.h>
 #include <boost/circular_buffer.hpp>
@@ -29,7 +31,8 @@ namespace
   double Ahrs_gyro_z = 0;
   double Prev_stamp = 0;
   size_t CachedMsgCounter = 0;
-  boost::circular_buffer<trooper_mlc_msgs::RawIMUData> ImuCache(ImuCacheSize);
+  // boost::circular_buffer<trooper_mlc_msgs::RawIMUData> ImuCache(ImuCacheSize);
+  boost::shared_ptr<kvh::KVHMessageProcessorBase> Plugin;
 }
 
 /**
@@ -87,6 +90,7 @@ void to_ros(const kvh::Message& msg, sensor_msgs::Imu& imu,
  * Adds a single IMU reading to the cached value. If the cache is full, this
  * resets the counter and returns true.
  */
+ /*
 void cache_imu(const kvh::Message& msg)
 {
   trooper_mlc_msgs::RawIMUData imu;
@@ -105,6 +109,7 @@ void cache_imu(const kvh::Message& msg)
 
   ImuCache.push_back(imu);
 }
+*/
 
 int main(int argc, char **argv)
 {
@@ -114,6 +119,15 @@ int main(int argc, char **argv)
   ros::NodeHandle nh("~");
   ros::Publisher imu_pub = nh.advertise<sensor_msgs::Imu>("imu", 1);
   ros::Publisher temp_pub = nh.advertise<sensor_msgs::Temperature>("temp", 1);
+
+  std::string plugin_name = "";
+  nh.getParam("processor_type", plugin_name);
+  if(!plugin_name.empty())
+  {
+    pluginlib::ClassLoader<kvh::KVHMessageProcessorBase> plugin_loader =
+      pluginlib::ClassLoader<kvh::KVHMessageProcessorBase>("kvh1750", "kvh::KVHMessageProcessorBase");
+    Plugin = plugin_loader.createInstance(plugin_name);
+  }
   ros::Publisher cache_pub = nh.advertise<trooper_mlc_msgs::CachedRawIMUData>("cached", 1);
   std::string imu_link_name = DefaultImuLink;
   nh.getParam("link_name", imu_link_name);
@@ -231,14 +245,20 @@ int main(int argc, char **argv)
     {
       case kvh::IMU1750::VALID:
         to_ros(msg, current_imu, current_temp);
+        if(Plugin)
+        {
+          Plugin->process_message(msg);
+        }
+        /*
         cache_imu(msg);
         if(CachedMsgCounter >= ImuCacheSize)
         {
           msg.time(cached_imu.header.stamp.sec, cached_imu.header.stamp.nsec);
-          std::reverse_copy(ImuCache.begin(), ImuCache.end(), 
+          std::reverse_copy(ImuCache.begin(), ImuCache.end(),
             cached_imu.data.begin());
           cache_pub.publish(cached_imu);
         }
+        */
         imu_pub.publish(current_imu);
         temp_pub.publish(current_temp);
         break;
