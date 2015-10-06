@@ -4,6 +4,7 @@
   <version>0.0.1</version>
   <description>KVH_1750_IMU Package</description>
   <maintainer email="erichahn@vt.edu">Eric Hahn</maintainer>
+  <maintainer email="jpz@vt.edu">Jason Ziglar</maintainer>
   <license>BSD</license>
 
 
@@ -18,6 +19,8 @@
   <!-- Example: -->
   <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
   <author email="erichahn@vt.edu">Eric Hahn</author>
+  <author email="jpz@vt.edu">Jason Ziglar</author>
+  <author email="laki@vt.edu">Laki Dantanarayana</author>
 
   <!-- The *_depend tags are used to specify dependencies -->
   <!-- Dependencies can be catkin packages or system dependencies -->
