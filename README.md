@@ -8,10 +8,16 @@
 ### How do I get set up? ###
 
 * Summary of set up
+	*
 * Configuration
+	* Clone this repository and setup RS485 serial ports
+	* Set serial port at 921600 baud
 * Dependencies
-* Database configuration
+	* KVH1750 IMU
+	* TOV Timing circuit with RS485 interface
+	* ROS
 * How to run tests
+	* Power on IMU, start KVH1750 node, view imu topic messages
 * Deployment instructions
 
 ### Contribution guidelines ###
