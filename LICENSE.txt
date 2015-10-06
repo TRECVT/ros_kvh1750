@@ -1,8 +1,4 @@
-<OWNER> = Terrestrial Robotics Engineering & Controls Lab
-<ORGANIZATION> = Virginia Polytechnic Institute and State University
-<YEAR> = 2014
-
-Copyright (c) <YEAR>, <OWNER>, <ORGANIZATION>
+Copyright (c) 2014, Terrestrial Robotics Engineering & Controls Lab, Virginia Polytechnic Institute and State University
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
