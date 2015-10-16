@@ -17,6 +17,7 @@ public:
   virtual ~MessageProcessorBase() {};
 
   virtual void process_message(const kvh::Message& msg) = 0;
+  virtual void set_link_name(const std::string& link) = 0;
 protected:
   MessageProcessorBase() {};
 };

@@ -91,15 +91,17 @@ int main(int argc, char **argv)
   ros::Publisher imu_pub = nh.advertise<sensor_msgs::Imu>("imu", 1);
   ros::Publisher temp_pub = nh.advertise<sensor_msgs::Temperature>("temp", 1);
 
+  std::string imu_link_name = DefaultImuLink;
+  nh.getParam("link_name", imu_link_name);
+
   std::string plugin_name = "";
   nh.getParam("processor_type", plugin_name);
   if(!plugin_name.empty())
   {
     pluginlib::ClassLoader<kvh::MessageProcessorBase> plugin_loader("kvh1750", "kvh::KVHMessageProcessorBase");
     Plugin = plugin_loader.createInstance(plugin_name);
+    Plugin->set_link_name(imu_link_name);
   }
-  std::string imu_link_name = DefaultImuLink;
-  nh.getParam("link_name", imu_link_name);
 
   nh.param("rate", Rate, 100);
 
