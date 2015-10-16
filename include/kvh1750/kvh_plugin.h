@@ -11,14 +11,14 @@
 namespace kvh
 {
 
-class KVHMessageProcessorBase
+class MessageProcessorBase
 {
 public:
-  virtual ~KVHMessageProcessorBase() {};
+  virtual ~MessageProcessorBase() {};
 
   virtual void process_message(const kvh::Message& msg) = 0;
 protected:
-  KVHMessageProcessorBase() {};
+  MessageProcessorBase() {};
 };
 
 }
