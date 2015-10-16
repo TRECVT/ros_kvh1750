@@ -7,7 +7,7 @@
 #define _IOMODULE_h_
 
 #include <cstring>
-#include <cstdint>
+#include <stdint.h>
 
 namespace kvh
 {
