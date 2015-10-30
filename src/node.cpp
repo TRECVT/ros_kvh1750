@@ -8,10 +8,11 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 #include <ros/ros.h>
 #include <tf/tf.h>
+#include <pluginlib/class_loader.h>
 #pragma GCC diagnostic pop
 
 #include "kvh1750/tov_file.h"
-#include <trooper_mlc_msgs/CachedRawIMUData.h>
+#include "kvh1750/kvh_plugin.h"
 #include <sensor_msgs/Temperature.h>
 #include <sensor_msgs/Imu.h>
 #include <boost/circular_buffer.hpp>
@@ -21,15 +22,13 @@ namespace
 {
   const std::string DefaultImuLink = "torso";
   const std::string DefaultAddress = "/dev/ttyS4";
-  const size_t ImuCacheSize = 15;
   int Rate;
   bool IsDA = true;
   double Ahrs_gyro_x = 0;
   double Ahrs_gyro_y = 0;
   double Ahrs_gyro_z = 0;
   double Prev_stamp = 0;
-  size_t CachedMsgCounter = 0;
-  boost::circular_buffer<trooper_mlc_msgs::RawIMUData> ImuCache(ImuCacheSize);
+  boost::shared_ptr<kvh::MessageProcessorBase> Plugin;
 }
 
 /**
@@ -83,29 +82,6 @@ void to_ros(const kvh::Message& msg, sensor_msgs::Imu& imu,
   temp.temperature = msg.temp();
 }
 
-/**
- * Adds a single IMU reading to the cached value. If the cache is full, this
- * resets the counter and returns true.
- */
-void cache_imu(const kvh::Message& msg)
-{
-  trooper_mlc_msgs::RawIMUData imu;
-  uint32_t secs = 0;
-  uint32_t nsecs = 0;
-  msg.time(secs, nsecs);
-  imu.imu_timestamp = static_cast<uint64_t>(secs * 1.0E6) +
-    static_cast<uint64_t>(nsecs * 1.0E-3);
-  imu.packet_count = CachedMsgCounter++;
-  imu.dax = msg.gyro_x();
-  imu.day = msg.gyro_y();
-  imu.daz = msg.gyro_z();
-  imu.ddx = msg.accel_x();
-  imu.ddy = msg.accel_y();
-  imu.ddz = msg.accel_z();
-
-  ImuCache.push_back(imu);
-}
-
 int main(int argc, char **argv)
 {
   //Name of node
@@ -114,9 +90,18 @@ int main(int argc, char **argv)
   ros::NodeHandle nh("~");
   ros::Publisher imu_pub = nh.advertise<sensor_msgs::Imu>("imu", 1);
   ros::Publisher temp_pub = nh.advertise<sensor_msgs::Temperature>("temp", 1);
-  ros::Publisher cache_pub = nh.advertise<trooper_mlc_msgs::CachedRawIMUData>("cached", 1);
+
   std::string imu_link_name = DefaultImuLink;
   nh.getParam("link_name", imu_link_name);
+
+  std::string plugin_name = "";
+  nh.getParam("processor_type", plugin_name);
+  if(!plugin_name.empty())
+  {
+    pluginlib::ClassLoader<kvh::MessageProcessorBase> plugin_loader("kvh1750", "kvh::KVHMessageProcessorBase");
+    Plugin = plugin_loader.createInstance(plugin_name);
+    Plugin->set_link_name(imu_link_name);
+  }
 
   nh.param("rate", Rate, 100);
 
@@ -124,7 +109,6 @@ int main(int argc, char **argv)
 
   nh.getParam("use_delta_angles", use_delta_angles);
 
-  trooper_mlc_msgs::CachedRawIMUData cached_imu;
   sensor_msgs::Imu current_imu;
   sensor_msgs::Temperature current_temp;
 
@@ -185,8 +169,6 @@ int main(int argc, char **argv)
   //IMU link locations
   current_temp.header.frame_id = imu_link_name;
   current_imu.header.frame_id = imu_link_name;
-  cached_imu.header.frame_id = imu_link_name;
-
   std::string addr = DefaultAddress;
   nh.getParam("address", addr);
 
@@ -231,13 +213,9 @@ int main(int argc, char **argv)
     {
       case kvh::IMU1750::VALID:
         to_ros(msg, current_imu, current_temp);
-        cache_imu(msg);
-        if(CachedMsgCounter >= ImuCacheSize)
+        if(Plugin)
         {
-          msg.time(cached_imu.header.stamp.sec, cached_imu.header.stamp.nsec);
-          std::reverse_copy(ImuCache.begin(), ImuCache.end(), 
-            cached_imu.data.begin());
-          cache_pub.publish(cached_imu);
+          Plugin->process_message(msg);
         }
         imu_pub.publish(current_imu);
         temp_pub.publish(current_temp);

@@ -17,13 +17,13 @@ endif()
 find_package(catkin REQUIRED COMPONENTS
              roscpp
              sensor_msgs
-             trooper_mlc_msgs
              serial
              tf
+             pluginlib
             )
 
 catkin_package(
-#  INCLUDE_DIRS include
+INCLUDE_DIRS include
 #  LIBRARIES
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
@@ -54,8 +54,6 @@ endif()
 add_executable(kvh_1750_imu src/node.cpp)
 target_link_libraries(kvh_1750_imu kvh1750 ${catkin_LIBRARIES})
 
-add_dependencies(kvh_1750_imu trooper_mlc_msgs_generate_messages_cpp)
-
 ##
 install(TARGETS kvh_1750_imu kvh1750
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -68,4 +66,9 @@ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 
 install(DIRECTORY launch
 DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(DIRECTORY include/kvh1750
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
 )
