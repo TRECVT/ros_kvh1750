@@ -1,3 +1,26 @@
+## https://github.com/TRECVT/ros_kvh1750.git (indigo) - 1.0.0-0
+
+The packages in the `https://github.com/TRECVT/ros_kvh1750.git` repository were released into the `indigo` distro by running `/usr/bin/bloom-release --ros-distro indigo --track indigo --edit https://github.com/TRECVT/ros_kvh1750.git` on `Tue, 15 Mar 2016 14:00:14 -0000`
+
+The `kvh1750` package was released.
+
+Version of package(s) in repository `https://github.com/TRECVT/ros_kvh1750.git`:
+
+- upstream repository: https://github.com/jasedit/ros_kvh1750.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `1.0.0-0`
+
+Versions of tools used:
+
+- bloom version: `0.5.21`
+- catkin_pkg version: `0.2.10`
+- rosdep version: `0.11.4`
+- rosdistro version: `0.4.5`
+- vcstools version: `0.1.38`
+
+
 # Introduction
 
 This ROS package provides an interface to interface with the [KVH 1750 IMU](http://www.kvh.com/Military-and-Government/Gyros-and-Inertial-Systems-and-Compasses/Gyros-and-IMUs-and-INS/IMUs/1750-IMU.aspx), with support for a hardware time-of-validity signal using serial, and a plugin interface for supporting alternate publishing schemes. These are used to support the message types for MIT's [Pronto](https://github.com/ipab-slmc/pronto-distro) state estimation library.
