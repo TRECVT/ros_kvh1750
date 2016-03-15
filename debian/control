@@ -1,0 +1,12 @@
+Source: ros-indigo-kvh1750
+Section: misc
+Priority: extra
+Maintainer: Jason Ziglar <jpz@vt.edu>
+Build-Depends: debhelper (>= 9.0.0), libgtest-dev, ros-indigo-catkin, ros-indigo-message-generation, ros-indigo-pluginlib, ros-indigo-roscpp, ros-indigo-rospy, ros-indigo-sensor-msgs, ros-indigo-serial, ros-indigo-tf
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-indigo-kvh1750
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-indigo-message-runtime, ros-indigo-pluginlib, ros-indigo-roscpp, ros-indigo-rospy, ros-indigo-sensor-msgs, ros-indigo-serial, ros-indigo-tf
+Description: KVH 1750 IMU Driver
