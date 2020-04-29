@@ -169,10 +169,10 @@ bool IMU1750::query_angle_units(bool& is_da)
   if(status)
   {
     std::vector<uint8_t>::iterator match;
-    status = find_response(RFCmd, match);
+    status = find_response(RFCmd, match) && parse_angle_units(match);
     if(status)
     {
-      status = parse_angle_units(match);
+      is_da = _is_da;
     }
   }
 
